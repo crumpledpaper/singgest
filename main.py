@@ -4,7 +4,8 @@ import urllib
 import jinja2
 import webapp2
 
-from models import Post as Feedback
+from models import Post, Place, Comment
+from google.appengine.ext import ndb
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__),'templates')),
@@ -32,18 +33,30 @@ class BaseHandler(webapp2.RequestHandler):
 
 class MainHandler(BaseHandler):
     def get(self):
+        
         self.render_template('index.html',{})
 
 class PostHandler(BaseHandler):
     def post(self):
-        post = Feedback(
+        post = Post(
             title=self.request.get('title'),
-            content=self.request.get('content'))
+            content=self.request.get('content')
+        )
         post.put()
+        self.redirect('/')
+        
+class CreatePlace(BaseHandler):
+    def get(self):
+        place = Place(
+            name='Google',
+            location=ndb.GeoPt(lat=1.279,lon=103.85)
+        )
+        place.put()
         self.redirect('/')
         
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
-    ('/post', PostHandler)
+    ('/post', PostHandler),
+    ('/debug', CreatePlace)
 ], debug=True)
