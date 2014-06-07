@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<script type="text/JavaScript">
+    function GetSearchData() {
+        var basicSearch = new BasicSearch;
+        var searchText = document.getElementById("txtSearchText").value
+        basicSearch.searchVal = searchText;
+        basicSearch.returnGeom = '1';
+
+        basicSearch.GetSearchResults(displayData)
+    }
+
+    function displayData(resultData){
+        var results = resultData.results;
+        if (results=='No results'){
+            document.getElementById('divResults').innerHTML = "No result(s) found";
+            return false
+        }
+        else{
+            var htmlStr = "<table>";
+            htmlStr = htmlStr + "<tr><th>Search Value </th></tr>";
+            for (var i = 0; i < results.length; i++) {
+                var row = results[i];
+                htmlStr = htmlStr + "<tr>";
+                htmlStr = htmlStr + "<td>";
+                htmlStr = htmlStr + "<a href='JavaScript:ZoomTo("+ row.X +","+ row.Y +")'>" + row.SEARCHVAL + "</a>";
+                htmlStr = htmlStr + "</td>";
+                htmlStr = htmlStr + "</tr>";
+            }
+            htmlStr = htmlStr + "</table>";
+            document.getElementById('divResults').innerHTML = htmlStr;
+        }
+    }
+   
+//add map on body load 
+var OneMap = new GetOneMap('divMain','SM');   
+
+function ZoomTo(xVal,yVal){
+  
+    OneMap.showLocation(xVal,yVal);
+}
+
+</script>
+<table style="width: 436px">
+    <tr>
+        <th colspan="2">
+        Address Search API Usage</th>
+    </tr>
+    <tr>
+        <td> Search Text  :</td>
+        <td><input type="text" id="txtSearchText" value='City Hall' /></td>
+    </tr>
+    <tr>
+    <td>
+        <input type="button" onClick="GetSearchData();" value="Search" /></td>
+    </tr>
+</table>
+<table>
+    <tr>
+        <td>
+            <div id="divMain" style='width:500px;height:500px;'></div></td>
+        <td style="vertical-align:top">
+            <div id="divResults"></div></td>
+    </tr>
+
+<form action="/post" method='post'>
+    Title: <input type=text name=title>
+    Content: <input type=text name=content>
+    <input type=submit value="Submit">
+</form>
+
+{% endblock %}
