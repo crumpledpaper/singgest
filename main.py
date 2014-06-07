@@ -60,13 +60,22 @@ class Upvote(BaseHandler):
         post_id = int(self.request.get('id'))
         query = Post.get_by_id(post_id)
         query.rating += 1
+        rating = query.rating
         query.put()
-        self.redirect('/')
-        
+        self.response.out.write(rating)
+
+class CreateComment(BaseHandler):
+    def post(self):
+        post_id = int(self.request.get('post_id'))
+        post = Post.get_by_id(post_id)
+        comment = Comment(post=post.key, content=self.request.get("content"))
+        comment.put()
+        self.redirect('/#q'+str(post_id))
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/post', PostHandler),
     ('/debug', CreatePlace),
-    ('/upvote', Upvote)
+    ('/upvote', Upvote),
+    ('/comment', CreateComment)
 ], debug=True)
