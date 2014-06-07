@@ -41,6 +41,27 @@ function ZoomTo(xVal,yVal){
 }
 
 </script>
+
+<script>
+    function upvote(id){
+        var xmlhttp;
+        //if (str=="")
+        //  {
+        //  document.getElementById("txtHint").innerHTML="";
+        //  return;
+        //  }
+        if (window.XMLHttpRequest)
+          {// code for IE7+, Firefox, Chrome, Opera, Safari
+          xmlhttp=new XMLHttpRequest();
+          }
+        else
+          {// code for IE6, IE5
+          xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+          }
+        xmlhttp.open("GET","/upvote?id="+id,true);
+        xmlhttp.send();
+    }
+</script>
 <table style="width: 436px">
     <tr>
         <th colspan="2">
@@ -69,6 +90,24 @@ function ZoomTo(xVal,yVal){
     <input type=submit value="Submit">
 </form>
 
-
+{% for post in posts %}
+    <div>
+    {{ post.title }}
+    {{ post.content }}
+    
+    <input type=button name=upvote onclick=upvote({{ post.key.id() }}) value=Upvote>
+    {{ post.rating }}
+    
+    <form action="/comment" method=post>
+        <input type=text name="comment">
+        <input type=submit value="Comment">
+    </form>
+    
+    {% for comment in comments %}
+        {{ comment.content }}
+    {% endfor %}
+    
+    </div>
+{% endfor %}
 
 {% endblock %}

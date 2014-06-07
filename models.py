@@ -8,7 +8,7 @@ class Post(ndb.Model):
     title = ndb.StringProperty(required=True)
     content = ndb.StringProperty(required=True)
     img = ndb.BlobProperty()
-    rating = ndb.IntegerProperty()
+    rating = ndb.IntegerProperty(default=0)
     place = ndb.KeyProperty(kind=Place)
     time = ndb.DateTimeProperty(auto_now_add=True)
     

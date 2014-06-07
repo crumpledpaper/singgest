@@ -33,8 +33,8 @@ class BaseHandler(webapp2.RequestHandler):
 
 class MainHandler(BaseHandler):
     def get(self):
-        
-        self.render_template('index.html',{})
+        post_query = Post.query().order(-Post.time).fetch()
+        self.render_template('index.html',{'posts':post_query})
 
 class PostHandler(BaseHandler):
     def post(self):
@@ -53,10 +53,20 @@ class CreatePlace(BaseHandler):
         )
         place.put()
         self.redirect('/')
+
+
+class Upvote(BaseHandler):
+    def get(self):
+        post_id = int(self.request.get('id'))
+        query = Post.get_by_id(post_id)
+        query.rating += 1
+        query.put()
+        self.redirect('/')
         
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/post', PostHandler),
-    ('/debug', CreatePlace)
+    ('/debug', CreatePlace),
+    ('/upvote', Upvote)
 ], debug=True)
