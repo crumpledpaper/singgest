@@ -65,17 +65,25 @@ class Upvote(BaseHandler):
         self.response.out.write(rating)
 
 class CreateComment(BaseHandler):
-    def post(self):
+    def get(self):
         post_id = int(self.request.get('post_id'))
         post = Post.get_by_id(post_id)
         comment = Comment(post=post.key, content=self.request.get("content"))
         comment.put()
-        self.redirect('/#q'+str(post_id))
+        self.response.out.write('')
+
+class GetComment(BaseHandler):
+    def get(self):
+        post_id = int(self.request.get('post_id'))
+        post = Post.get_by_id(post_id)
+        comment_query = Comment.query().filter(Comment.post==post.key).order(-Comment.time).fetch()
+        self.response.out.write(comment_query)
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/post', PostHandler),
     ('/debug', CreatePlace),
     ('/upvote', Upvote),
-    ('/comment', CreateComment)
+    ('/comment', CreateComment),
+    ('/getcomment', GetComment)
 ], debug=True)

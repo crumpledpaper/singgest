@@ -15,3 +15,4 @@ class Post(ndb.Model):
 class Comment(ndb.Model):
     post = ndb.KeyProperty(kind=Post)
     content = ndb.StringProperty()
+    time = ndb.DateTimeProperty(auto_now_add=True)
