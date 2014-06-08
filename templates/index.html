@@ -3,42 +3,54 @@
 <script type="text/JavaScript">
     function GetSearchData() {
         var basicSearch = new BasicSearch;
-        var searchText = document.getElementById("txtSearchText").value
+        var searchText = '$' + document.getElementById("txtSearchText").value + '$';
         basicSearch.searchVal = searchText;
-        basicSearch.returnGeom = '1';
-
-        basicSearch.GetSearchResults(displayData)
+        basicSearch.returnGeom = '0';
+    
+        basicSearch.GetSearchResults(displayData);
     }
-
     function displayData(resultData){
         var results = resultData.results;
         if (results=='No results'){
-            document.getElementById('divResults').innerHTML = "No result(s) found";
-            return false
+            document.getElementById('divResults').innerHTML = "<li> <a class='ui-btn' > No result(s) found </a> </li>";
+            return false;
         }
         else{
-            var htmlStr = "<table>";
-            htmlStr = htmlStr + "<tr><th>Search Value </th></tr>";
+            
+            var htmlStr = "";
+            var xmlhttp;
+            if (window.XMLHttpRequest)
+                {// code for IE7+, Firefox, Chrome, Opera, Safari
+                xmlhttp=new XMLHttpRequest();
+                }
+              else
+                {// code for IE6, IE5
+                xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+                }
             for (var i = 0; i < results.length; i++) {
                 var row = results[i];
-                htmlStr = htmlStr + "<tr>";
-                htmlStr = htmlStr + "<td>";
-                htmlStr = htmlStr + "<a href='JavaScript:ZoomTo("+ row.X +","+ row.Y +")'>" + row.SEARCHVAL + "</a>";
-                htmlStr = htmlStr + "</td>";
-                htmlStr = htmlStr + "</tr>";
+                
+                var inXYList = row.X + ',' + row.Y;
+                var inputSR = 3414;
+                var outputSR = 4326;
+                
+                var CoordConvertorObj= new CoordConvertor();
+                CoordConvertorObj.ConvertCoordinate(inXYList,inputSR,outputSR,showVals);
+                
+                htmlStr = htmlStr + "<li>";
+                htmlStr = htmlStr + "<a data-transition='slidedown' class='ui-btn ui-btn-icon-right ui-icon-carat-r' href='#"+ row.SEARCHVAL +"_locationPage'>" + row.SEARCHVAL + "</a>";
+                htmlStr = htmlStr + "</li>";
+                
+                xmlhttp.open('GET','/createplace?name='+row.SEARCHVAL)
+                xmlhttp.send()
             }
-            htmlStr = htmlStr + "</table>";
             document.getElementById('divResults').innerHTML = htmlStr;
         }
     }
-   
-//add map on body load 
-var OneMap = new GetOneMap('divMain','SM');   
-
-function ZoomTo(xVal,yVal){
-  
-    OneMap.showLocation(xVal,yVal);
-}
+    
+    function showVals(outXY){
+        console.log(outXY);
+    }
 
 </script>
 
@@ -89,7 +101,7 @@ function ZoomTo(xVal,yVal){
                 content.value='';
                 var start = new Date().getTime();
                 for (var i = 0; i < 1e7; i++) {
-                  if ((new Date().getTime() - start) > 50){
+                  if ((new Date().getTime() - start) > 100){
                     break;
                   }
                 }
@@ -97,6 +109,35 @@ function ZoomTo(xVal,yVal){
             }
         }
         xmlhttp.open("GET","/comment?id="+id+'&content='+content.value,true);
+        xmlhttp.send();
+    }
+    
+    function post() {
+        var xmlhttp;
+        var title = document.getElementById('post_title');
+        var content = document.getElementById('post_content');
+        var place = document.getElementById('post_place');
+        //if (str=="")
+        //  {
+        //  document.getElementById("txtHint").innerHTML="";
+        //  return;
+        //  }
+        if (window.XMLHttpRequest)
+          {// code for IE7+, Firefox, Chrome, Opera, Safari
+          xmlhttp=new XMLHttpRequest();
+          }
+        else
+          {// code for IE6, IE5
+          xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+          }
+        xmlhttp.onreadystatechange=function() {
+            if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+                title.value='';
+                content.value='';
+                
+            }
+        }
+        xmlhttp.open("GET","/post?title="+title.value+'&content='+content.value+'&place='+place.value,true);
         xmlhttp.send();
     }
     
@@ -122,6 +163,31 @@ function ZoomTo(xVal,yVal){
         }
         xmlhttp.open("GET","/getcomment?id="+id,true);
         xmlhttp.send();
+    
+    function getplace(){
+        var xmlhttp;
+        //if (str=="")
+        //  {
+        //  document.getElementById("txtHint").innerHTML="";
+        //  return;
+        //  }
+        if (window.XMLHttpRequest)
+          {// code for IE7+, Firefox, Chrome, Opera, Safari
+          xmlhttp=new XMLHttpRequest();
+          }
+        else
+          {// code for IE6, IE5
+          xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+          }
+        xmlhttp.onreadystatechange=function() {
+            if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+                document.getElementById(id+'_locationPage').innerHTML=xmlhttp.responseText;
+            }
+        }
+        xmlhttp.open("GET","/getcomment?id="+id,true);
+        xmlhttp.send();
+    }
+    
     }
 </script>
 
@@ -129,16 +195,13 @@ function ZoomTo(xVal,yVal){
     
     <div data-role="panel" id="searchResults" data-position="right" data-display="overlay">
         <!-- panel content goes here -->
-        <ul data-role="listview" data-filter="true" data-filter-placeholder="Search favorites...">
-            <li><!--<a data-transition="slideup" href='#tablesPage?place={{ place }}'>{{ place }}</a>-->
-                <div id="divResults"></div>
-            </li>
+        <ul data-role="listview" id="divResults">
         </ul>
     </div><!-- /panel -->
     
     <div role="main">
-        <div id="divMain" style='width:100%;height:94vh;'></div>
-        
+        <!--<div id="divMain" style='width:100%;height:94vh;'></div>-->
+        <div id="map-canvas" style="width: 100%; height: 94vh;"></div>
         
         
         <div data-role="footer" data-position="fixed">
@@ -151,54 +214,109 @@ function ZoomTo(xVal,yVal){
 </div> <!-- /mapsPage -->
 
 
-
-<div data-role="page" id="places">
+{% for place in places %}
+<div data-role="page" id="{{ place.name }}_locationPage">
+    
+    <div data-role="header" data-position="fixed">
+        <a href="#mapsPage" data-transition="slidedown" data-icon="location" class="ui-btn-left">Back to Map</a>
+        <h1>{{ place.name }}</h1>
+    <!--    <div data-role="controlgroup" data-type="horizontal" class="ui-btn-right">-->
+    <!--        <a href="" onclick="shareFacebook()" class="ui-mini ui-btn ui-btn-icon-right ui-icon-action ui-btn-icon-notext">Share</a>-->
+    <!--        <a href="#favDialog3" data-rel="popup" class="ui-mini ui-btn ui-btn-icon-right ui-icon-star ui-btn-icon-notext" data-transition="pop">Favorite</a>-->
+    <!---->
+        <!--</div>-->
+    </div>
+    
+    <div data-role="collapsible">
+        <h4>New Post:</h4>
+            <input type=hidden value={{ place.name }} id=post_place>
+            <label for=text><h4>Title:</h4></label>
+            <input type=text id=post_title>
+            <label for="textarea"><h4>Content:</h4></label>
+            <textarea cols=40 rows=8 name="content" id="post_content"></textarea>
+        <br>
+        <input type="button" value="Post Suggestion" data-iconpos="right" data-icon="edit" data-theme="a" onclick=post()>
+    </div>
+    
     <ul data-role="listview">
         {% for post in posts %}
+        {% if post.place == place.name %}
             <li>
-                <a href="#q{{ post.key.id() }}">{{ post.title }}
+                <a href="#q{{ post.key.id() }}">
+                <h2>{{ post.title }}</h2>
+                <p>{{ post.author }}</p>
+                <p>    </p>
+                <p>{{ time }}</p>
+                <p class="ui-li-aside"><strong>{{ post.comment }}</strong> comments</p>
                 <span id="{{ post.key.id() }}_rating" class=ui-li-count>{{ post.rating }}</span>
                 </a>
                 <a data-icon=plus onclick=upvote({{ post.key.id() }})></a>
                 
             </li>
+        {% endif %}
         {% endfor %}
     </ul>
-    <a href="#newPost">New Post</a>
 </div>
+{% endfor %}
 
 {% for post in posts %}
 <div data-role="page" id="q{{ post.key.id() }}">
-    <a data-rel=back></a>
-    <h1>{{ post.title }}</h1>
-    <div>{{ post.content }}</div>
     
-    <button data-icon=plus onclick=upvote({{ post.key.id() }})>
-        <span id="{{ post.key.id() }}_post_rating">{{ post.rating }}</span>
-    </button>
-    
-        <input type=text name="content" id="{{ post.key.id() }}_comment_content" autocomplete=off>
-        <input type=submit value="Comment" onclick=comment({{ post.key.id() }})>
-    
-    <div id="{{ post.key.id() }}_comment">
+    <div data-role="header" data-position="fixed">
+        <a href="" data-rel="back" data-transition="slidedown" data-icon="back" class="ui-btn-left">Back</a>
+        <h1>{{ post.place.name }}</h1>
+    <!--    <div data-role="controlgroup" data-type="horizontal" class="ui-btn-right">-->
+    <!--        <a href="" onclick="shareFacebook()" class="ui-mini ui-btn ui-btn-icon-right ui-icon-action ui-btn-icon-notext">Share</a>-->
+    <!--        <a href="#favDialog3" data-rel="popup" class="ui-mini ui-btn ui-btn-icon-right ui-icon-star ui-btn-icon-notext" data-transition="pop">Favorite</a>-->
+    <!---->
+        <!--</div>-->
+    </div>
+        
+    <div role="main" class="ui-content">
+        
+        <div class="ui-bar ui-bar-a">
+            <h2>{{ post.title }}</h2>
+        </div>
+        <div class="ui-body ui-body-a">
+            <p>{{ post.content }}</p>
+            <div data-role="controlgroup" data-type="horizontal" class="ui-btn-right">
+                <button id="{{ post.key.id() }}_post_rating">{{ post.rating }}</button>
+                <a href="#" data-rel="popup" class="ui-mini ui-btn ui-btn-icon-right ui-icon-plus ui-btn-icon-notext" data-transition="pop" onclick=upvote({{ post.key.id() }})>Favorite</a>
+            </div>
+        </div>
+
         <br>
-        <script>
-            getcomment("{{ post.key.id() }}")
-        </script>
+        <br>
+        <br>
+
+    <div class="ui-bar ui-bar-a">
+        <h3>{{ post.comment }} comments</h3>
+    </div>
+    
+    <div class="ui-body ui-body-a">
+        <br>
+        <br>
+        <div class="ui-body ui-body-a ui-corner-all">
+            <label for="textarea"><h4>Post A Comment:</h4></label>
+            <textarea cols=40 rows=8 name="content" id="{{ post.key.id() }}_comment_content"></textarea>
+            
+            <br>
+            <input type="button" value="Post Comment" data-iconpos="right" data-icon="edit" data-theme="a" onclick=comment({{ post.key.id() }})>
+        </div>
+        
+        <br>
+        <br>
+            
+        <div id="{{ post.key.id() }}_comment">
+            <script>
+                getcomment("{{ post.key.id() }}")
+            </script>
+        </div>
     </div>
 
 </div>
 {% endfor %}
 
 
-<div data-role="page" id="newPost">
-    <form action="/post" method='post'>
-        <label>Title</label>
-        <input type=text name=title>
-        <label>Content</label>
-        <input type=text name=content>
-        <input type=submit value="Submit">
-    </form>
-</div>
 
 {% endblock %}

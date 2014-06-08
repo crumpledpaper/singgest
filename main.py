@@ -1,5 +1,6 @@
 import os
 import urllib
+import datetime
 
 import jinja2
 import webapp2
@@ -34,26 +35,21 @@ class BaseHandler(webapp2.RequestHandler):
 class MainHandler(BaseHandler):
     def get(self):
         post_query = Post.query().order(-Post.time).fetch()
-        self.render_template('index.html',{'posts':post_query})
+        place_query = Place.query()
+        time = None
+        for post in post_query:
+            time = post.time.strftime("%a %d-%b-%Y %H:%M")
+        self.render_template('index.html',{'posts':post_query, 'time':time, 'places': place_query})
 
 class PostHandler(BaseHandler):
-    def post(self):
+    def get(self):
         post = Post(
             title=self.request.get('title'),
-            content=self.request.get('content')
+            content=self.request.get('content'),
+            place=self.request.get('place')
         )
         post.put()
         self.redirect('/')
-        
-class CreatePlace(BaseHandler):
-    def get(self):
-        place = Place(
-            name='Google',
-            location=ndb.GeoPt(lat=1.279,lon=103.85)
-        )
-        place.put()
-        self.redirect('/')
-
 
 class Upvote(BaseHandler):
     def get(self):
@@ -88,11 +84,40 @@ class GetComment(BaseHandler):
             output += '</p></div><br>'
         self.response.out.write(output)
 
+class CreatePlace(BaseHandler):
+    def get(self):
+        name = self.request.get("name")
+        place_query = Place.query().filter(name==name).fetch()
+        if not place_query:
+            place = Place(name=name)
+            place.put()
+
+class GetPlace(BaseHandler):
+    def get(self):
+        name = self.request.get("name")
+        place_query = Place.query().filter(Place.name==name).fetch()
+        key = place_query[0].key
+        post_query = Post.query().filter(Post.place==key).fetch()
+        
+class GetPost(BaseHandler):
+    def get(self):
+        post_query = Post.query().fetch()
+        output = []
+        for post in post_query:
+            place_query = Place.query().filter(Place.name==post.place).fetch()
+            location = place_query[0].location
+            output.append((post.place,location.lat,location.lon,post.rating))
+        output = str(output)[2:-2]
+        self.response.out.write(output)
+
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/post', PostHandler),
-    ('/debug', CreatePlace),
     ('/upvote', Upvote),
     ('/comment', CreateComment),
-    ('/getcomment', GetComment)
+    ('/getcomment', GetComment),
+    ('/createplace', CreatePlace),
+    ('/getplace', GetPlace),
+    ('/getpost', GetPost)
 ], debug=True)

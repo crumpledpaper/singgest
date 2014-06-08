@@ -10,7 +10,7 @@ class Post(ndb.Model):
     author = ndb.StringProperty(default="Anonymous")
     img = ndb.BlobProperty()
     rating = ndb.IntegerProperty(default=0)
-    place = ndb.KeyProperty(kind=Place)
+    place = ndb.StringProperty()
     time = ndb.DateTimeProperty(auto_now_add=True)
     comment = ndb.IntegerProperty(default=0)
     
