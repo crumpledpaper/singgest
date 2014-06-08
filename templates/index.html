@@ -61,14 +61,16 @@ function ZoomTo(xVal,yVal){
         xmlhttp.onreadystatechange=function() {
             if (xmlhttp.readyState==4 && xmlhttp.status==200) {
                 document.getElementById(id+'_rating').innerHTML=xmlhttp.responseText;
+                document.getElementById(id+'_post_rating').innerHTML=xmlhttp.responseText;
             }
         }
         xmlhttp.open("GET","/upvote?id="+id,true);
         xmlhttp.send();
     }
     
-    function comment(id,content) {
+    function comment(id) {
         var xmlhttp;
+        var content = document.getElementById(id+'_comment_content');
         //if (str=="")
         //  {
         //  document.getElementById("txtHint").innerHTML="";
@@ -84,10 +86,17 @@ function ZoomTo(xVal,yVal){
           }
         xmlhttp.onreadystatechange=function() {
             if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-                document.getElementById(id+'_comment').innerHTML=xmlhttp.responseText;
+                content.value='';
+                var start = new Date().getTime();
+                for (var i = 0; i < 1e7; i++) {
+                  if ((new Date().getTime() - start) > 50){
+                    break;
+                  }
+                }
+                getcomment(id);
             }
         }
-        xmlhttp.open("GET","/comment?id="+id+'content='+content,true);
+        xmlhttp.open("GET","/comment?id="+id+'&content='+content.value,true);
         xmlhttp.send();
     }
     
@@ -165,15 +174,17 @@ function ZoomTo(xVal,yVal){
     <div>{{ post.content }}</div>
     
     <button data-icon=plus onclick=upvote({{ post.key.id() }})>
-        <span id="{{ post.key.id() }}_rating">{{ post.rating }}</span>
+        <span id="{{ post.key.id() }}_post_rating">{{ post.rating }}</span>
     </button>
     
-        <input type=hidden name=post_id value="{{ post.key.id() }}">
-        <input type=text name="content">
-        <input type=submit value="Comment" onclick=comment()>
+        <input type=text name="content" id="{{ post.key.id() }}_comment_content" autocomplete=off>
+        <input type=submit value="Comment" onclick=comment({{ post.key.id() }})>
     
-    <div id={{ post.key.id() }}_comment>
-        
+    <div id="{{ post.key.id() }}_comment">
+        <br>
+        <script>
+            getcomment("{{ post.key.id() }}")
+        </script>
     </div>
 
 </div>

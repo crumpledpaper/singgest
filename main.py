@@ -66,18 +66,27 @@ class Upvote(BaseHandler):
 
 class CreateComment(BaseHandler):
     def get(self):
-        post_id = int(self.request.get('post_id'))
+        post_id = int(self.request.get('id'))
         post = Post.get_by_id(post_id)
+        post.comment += 1
+        post.put()
         comment = Comment(post=post.key, content=self.request.get("content"))
         comment.put()
-        self.response.out.write('')
 
 class GetComment(BaseHandler):
     def get(self):
-        post_id = int(self.request.get('post_id'))
+        post_id = int(self.request.get('id'))
         post = Post.get_by_id(post_id)
         comment_query = Comment.query().filter(Comment.post==post.key).order(-Comment.time).fetch()
-        self.response.out.write(comment_query)
+        output = ''
+        for comment in comment_query:
+            output += '<div class="ui-bar ui-bar-a"><h3>'
+            output += comment.author
+            output += ' said...</h3></div>'
+            output += '<div class="ui-body ui-body-a"><p>'
+            output += comment.content
+            output += '</p></div><br>'
+        self.response.out.write(output)
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
