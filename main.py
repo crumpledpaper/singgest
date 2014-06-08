@@ -35,7 +35,7 @@ class BaseHandler(webapp2.RequestHandler):
 class MainHandler(BaseHandler):
     def get(self):
         post_query = Post.query().order(-Post.time).fetch()
-        place_query = Place.query()
+        place_query = Place.query().fetch()
         time = None
         for post in post_query:
             time = post.time.strftime("%a %d-%b-%Y %H:%M")
@@ -49,7 +49,6 @@ class PostHandler(BaseHandler):
             place=self.request.get('place')
         )
         post.put()
-        self.redirect('/')
 
 class Upvote(BaseHandler):
     def get(self):
